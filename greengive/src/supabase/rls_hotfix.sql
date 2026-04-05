@@ -1,20 +1,29 @@
 -- ============================================================
--- FINAL FIX: Catch-all to insert ANY missing profile
+-- FIX: Make handle_new_user trigger safe against invalid charity UUIDs
 -- Run this in Supabase SQL Editor → New Query
 -- ============================================================
 
-INSERT INTO public.profiles (id, email, full_name)
-SELECT 
-  id, 
-  email, 
-  COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1))
-FROM auth.users
-WHERE id NOT IN (SELECT id FROM public.profiles)
-ON CONFLICT (id) DO NOTHING;
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  charity_uuid UUID;
+BEGIN
+  BEGIN
+    charity_uuid := (NEW.raw_user_meta_data->>'charity_id')::UUID;
+  EXCEPTION WHEN others THEN
+    charity_uuid := NULL;
+  END;
 
--- Also let's make sure the INSERT policy is perfectly relaxed for authenticated users taking ownership:
-DROP POLICY IF EXISTS "profile_insert_own" ON profiles;
-CREATE POLICY "profile_insert_own" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+  INSERT INTO profiles (id, email, full_name, charity_id, charity_pct)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    charity_uuid,
+    COALESCE((NEW.raw_user_meta_data->>'charity_pct')::NUMERIC, 10.00)
+  )
+  ON CONFLICT (id) DO NOTHING;
 
--- Verify it worked
-SELECT id, email, full_name FROM public.profiles;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

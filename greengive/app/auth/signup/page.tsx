@@ -66,11 +66,14 @@ export default function SignupPage() {
     setError('');
     try {
       const supabase = createClient();
-      const cleanEmail = email.trim().replace(/['"]/g, '');
+      const cleanEmail = email.trim().replace(/['\"]/g, '');
+      
+      const isMockCharity = selectedCharity?.startsWith('mock-');
+      
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
-        options: { data: { full_name: fullName, charity_id: selectedCharity } },
+        options: { data: { full_name: fullName, charity_id: isMockCharity ? null : selectedCharity } },
       });
 
       if (signUpError) throw signUpError;
