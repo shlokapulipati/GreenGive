@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+
+# IDEs
+.vscode/
+.idea/
+
+# Envs
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Others
+.vercel/
+ts_check.txt
+.DS_Store
