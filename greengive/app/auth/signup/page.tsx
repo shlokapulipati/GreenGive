@@ -88,10 +88,13 @@ export default function SignupPage() {
       }
 
       const plan = PLANS.find(p => p.id === selectedPlan)!;
-      const { url } = await createCheckoutSession(plan.priceId, signUpData.user.id, email, token);
-
-      if (url) window.location.href = url;
-      else router.push('/dashboard');
+      try {
+        const { url } = await createCheckoutSession(plan.priceId, signUpData.user.id, email, token);
+        if (url) window.location.href = url;
+        else router.push('/dashboard');
+      } catch {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Signup failed');
     } finally {
