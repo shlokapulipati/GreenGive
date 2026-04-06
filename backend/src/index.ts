@@ -12,14 +12,19 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 
-const allowedOrigins: string[] = [
-  process.env.FRONTEND_URL,
-  'https://green-give-one.vercel.app',
-  'http://localhost:3000',
-].filter((o): o is string => typeof o === 'string');
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      origin.endsWith('.vercel.app') ||
+      origin === 'http://localhost:3000' ||
+      origin === process.env.FRONTEND_URL
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
