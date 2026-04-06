@@ -6,17 +6,17 @@ import webhookRouter from './routes/webhook.js';
 import stripeRouter from './routes/stripe.js';
 import drawsRouter from './routes/draws.js';
 import scoresRouter from './routes/scores.js';
-import adminRouter from './routes/admin.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 
-const allowedOrigins = [
+const allowedOrigins: string[] = [
   process.env.FRONTEND_URL,
   'https://green-give-one.vercel.app',
   'http://localhost:3000',
-].filter(Boolean);
+].filter((o): o is string => typeof o === 'string');
 
 app.use(cors({
   origin: allowedOrigins,
