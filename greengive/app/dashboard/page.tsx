@@ -17,6 +17,7 @@ export default function UserDashboard() {
   const [submitting, setSubmitting] = useState(false);
 const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [backendOffline, setBackendOffline] = useState(false);
+  const [backendWaking, setBackendWaking] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -77,12 +78,19 @@ const [message, setMessage] = useState<{ type: 'success' | 'error', text: string
       const { data: session } = await supabase.auth.getSession();
       if (session?.session?.access_token) {
         try {
+          setBackendWaking(true);
           const { data: scoresData } = await getScores(session.session.access_token);
           setScores(scoresData || []);
           setBackendOffline(false);
+          setBackendWaking(false);
         } catch (apiErr) {
-          console.error("Backend connection failed:", apiErr);
+          console.error('Backend connection failed:', apiErr);
           setBackendOffline(true);
+          setBackendWaking(false);
+          setTimeout(() => {
+            setRefreshing(true);
+            fetchUserData();
+          }, 30000);
         }
       }
     } catch (err: any) {
@@ -244,12 +252,18 @@ const [message, setMessage] = useState<{ type: 'success' | 'error', text: string
               </form>
 
               <div className="space-y-3">
-                {backendOffline ? (
+                {backendWaking ? (
+                  <div className="py-12 text-center border-2 border-dashed border-gold/20 bg-gold/5 rounded-2xl">
+                    <div className="mx-auto mb-3 w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                    <p className="text-gold text-sm font-bold uppercase tracking-widest mb-1">Waking up server...</p>
+                    <p className="text-gray-500 text-xs italic">This can take up to 30 seconds on first load.</p>
+                  </div>
+                ) : backendOffline ? (
                   <div className="py-12 text-center border-2 border-dashed border-red-500/20 bg-red-500/5 rounded-2xl">
                     <AlertCircle className="mx-auto text-red-500 mb-3" size={24} />
                     <p className="text-red-400 text-sm font-bold uppercase tracking-widest mb-1">Backend Connection Error</p>
-                    <p className="text-gray-500 text-xs italic">Make sure your game server is running on port 4000.</p>
-                    <button onClick={() => { setRefreshing(true); fetchUserData(); }} className="mt-4 text-xs font-bold text-white underline">Retry Connection</button>
+                    <p className="text-gray-500 text-xs italic">Retrying automatically in 30s...</p>
+                    <button onClick={() => { setRefreshing(true); setBackendOffline(false); setBackendWaking(true); fetchUserData(); }} className="mt-4 text-xs font-bold text-white underline">Retry Now</button>
                   </div>
                 ) : scores.length === 0 ? (
                   <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-2xl">

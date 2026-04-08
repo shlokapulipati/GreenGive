@@ -7,7 +7,7 @@ async function apiFetch<T>(
   token?: string
 ): Promise<T> {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 5000); 
+  const id = setTimeout(() => controller.abort(), 35000); 
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
